@@ -1,0 +1,36 @@
+<div class="modal fade" id="adminGeocodeModal" tabindex="-1" aria-labelledby="adminGeocodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminGeocodeModalLabel">地理編碼未處理房源</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>此操作將對資料庫中所有尚未標註經緯度的房源進行地理編碼。</p>
+                <p>這可能需要一些時間，請耐心等待。</p>
+                <p class="text-danger">請輸入您的密碼以確認操作：</p>
+                <form id="geocodeForm">
+                    {% csrf_token %} {# Django CSRF token #}
+                    <div class="mb-3">
+                        <label for="adminPassword" class="form-label">管理員密碼</label>
+                        <input type="password" class="form-control" id="adminPassword" required>
+                    </div>
+                    <div id="geocodeMessage" class="alert mt-3" style="display: none;"></div>
+                    <div id="geocodeLoadingIndicator" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2" id="geocodeProgressBarText">正在進行地理編碼，請稍候...</p>
+                        <div class="progress mt-3">
+                            <div id="geocodeProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmGeocodeBtn">確認並執行</button>
+            </div>
+        </div>
+    </div>
+</div>

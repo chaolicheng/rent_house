@@ -1,0 +1,100 @@
+<div class="modal fade" id="deactivateAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">停用帳號</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 顯示用戶資訊 -->
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">帳號資訊：</h6>
+                    <p class="mb-1">用戶 ID：{{ user.id }}</p>
+                    <p class="mb-1">用戶名稱：{{ user.username }}</p>
+                    <p class="mb-1">註冊日期：{{ user.date_joined|date:"Y-m-d H:i" }}</p>
+                    <p class="mb-0">收藏數量：{{ user.favorites.count }}</p>
+                </div>
+                
+                <!-- 警告訊息 -->
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        重要提醒
+                    </h6>
+                    <hr>
+                    <ul class="mb-0">
+                        <li>帳號停用後將立即登出</li>
+                        <li>停用期間無法登入系統</li>
+                        <li>您的收藏資料會被保留</li>
+                        <li>如需重新啟用帳號，請聯繫管理員</li>
+                    </ul>
+                </div>
+
+                <!-- 密碼確認表單 -->
+                <form id="deactivateAccountForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">請輸入密碼以確認停用</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <div class="form-text text-muted">
+                            請輸入您目前的登入密碼以確認身份
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="deactivateAccountForm" class="btn btn-warning">
+                    <i class="bi bi-pause-circle"></i> 確認停用
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deactivateAccountForm');
+    const modal = document.getElementById('deactivateAccountModal');
+    const bsModal = new bootstrap.Modal(modal);
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 彈出確認對話框
+        if (!confirm('您確定要停用此帳號嗎？\n\n• 停用後將立即登出\n• 停用期間無法登入系統\n• 需要聯繫管理員才能重新啟用\n\n請確認您已了解以上影響。')) {
+            return;
+        }
+        
+        const formData = new FormData(form);
+        
+        fetch('{% url "deactivate_account" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                // 延遲1秒後重導向到登入頁面
+                setTimeout(() => {
+                    window.location.href = '{% url "login" %}';
+                }, 1000);
+            } else {
+                showMessage(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showMessage('發生錯誤：' + error, 'danger');
+        })
+        .finally(() => {
+            // 不管成功或失敗都執行清空和關閉
+            form.reset();
+            bsModal.hide();
+        });
+    });
+});
+</script>

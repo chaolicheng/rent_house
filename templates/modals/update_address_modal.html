@@ -1,0 +1,91 @@
+<div class="modal fade" id="updateAddressModal" tabindex="-1" aria-labelledby="updateAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateAddressModalLabel">修改帳號地址</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="updateAddressForm" method="post" action="{% url 'update_address' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- 顯示用戶地址 -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">目前地址：</h6>
+                        <p class="mb-1">{{ user.address }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newAddress" class="form-label">新地址</label>
+                        <input type="text" class="form-control" id="newAddress" name="new_address" value="{{ user.address|default:'' }}">
+                        <div class="form-text">輸入您希望用來搜尋附近房源的地址，越詳細越好（例如：XX市XX區XX路XX號）。</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="currentPasswordAddress" class="form-label">請輸入您的密碼以驗證身份</label>
+                        <input type="password" class="form-control" id="currentPasswordAddress" name="current_password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存地址</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('updateAddressForm');
+    const modal = document.getElementById('updateAddressModal');
+    const bsModal = new bootstrap.Modal(modal);
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+
+        fetch("{% url 'update_address' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            showAddressMessage(data.message, data.success ? 'success' : 'danger');
+        })
+        .catch(error => {
+            showAddressMessage('發生錯誤：' + error, 'danger');
+        })
+        .finally(() => {
+            form.reset();
+            bsModal.hide();
+        });
+    });
+});
+
+// 訊息顯示函數
+function showAddressMessage(message, type) {
+    const container = document.getElementById('messages-container');
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+
+    container.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 3000
+    });
+    bsToast.show();
+}
+</script>

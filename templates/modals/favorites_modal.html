@@ -1,0 +1,151 @@
+<div class="modal fade" id="favoritesModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">我的收藏</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if user.favorites.all %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>編號</th>
+                                    <th>標題</th>
+                                    <th>地址</th>
+                                    <th>樓層</th>
+                                    <th>格局</th>
+                                    <th>租金</th>
+                                    <th>車位</th>
+                                    <th>坪數</th>
+                                    <th>聯絡人</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in user.favorites.all %}
+                                <tr>
+                                    <td>{{ item.serial }}</td>
+                                    <td><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></td>
+                                    <td>
+                                        <a href="https://www.google.com/maps/search/?api=1&query={{ item.addr|urlencode }}" 
+                                           target="_blank" 
+                                           class="text-dark" 
+                                           title="在 Google Maps 中開啟">
+                                            {{ item.addr }}
+                                            <i class="bi bi-geo-alt-fill text-danger ms-1"></i>
+                                        </a>
+                                    </td>
+                                    <td>{{ item.level }}</td>
+                                    <td>{{ item.pattern|default:"-" }}</td>
+                                    <td>{{ item.rent|cut:"元/月"|cut:"," }}</td>
+                                    <td>{{ item.parking|default:"-" }}</td>
+                                    <td>{{ item.area|cut:"坪" }}</td>
+                                    <td>{{ item.agent|default:"-" }}</td>
+                                    <td>
+                                        <form method="post" action="{% url 'remove_favorite' item.serial %}" 
+                                              class="d-inline remove-favorite-form">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger remove-favorite-btn">
+                                                <i class="bi bi-heart-fill"></i> 取消收藏
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        您目前沒有收藏任何物件
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化所有 Toast
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+    var toastList = toastElList.map(function(toastEl) {
+        return new bootstrap.Toast(toastEl, {
+            autohide: true,
+            delay: 3000
+        });
+    });
+    toastList.forEach(toast => toast.show());
+
+    // 創建訊息顯示函數
+    function showMessage(message, type = 'success') {
+        const container = document.getElementById('messages-container');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 3000
+        });
+        bsToast.show();
+    }
+
+    // 綁定取消收藏的 AJAX 處理
+    const forms = document.querySelectorAll('.remove-favorite-form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = form.querySelector('.remove-favorite-btn');
+            const row = btn.closest('tr');
+            
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 更新收藏數量
+                    const badge = document.querySelector('.favorites-count');
+                    if (badge) {
+                        badge.textContent = parseInt(badge.textContent) - 1;
+                    }
+                    // 移除該列
+                    row.remove();
+                    // 顯示成功訊息
+                    showMessage(data.message);
+                    // 如果沒有收藏項目了，顯示提示訊息
+                    if (document.querySelectorAll('.remove-favorite-form').length === 0) {
+                        const tableDiv = document.querySelector('.table-responsive');
+                        tableDiv.innerHTML = '<div class="alert alert-info text-center">您目前沒有收藏任何物件</div>';
+                    }
+                } else {
+                    // 顯示錯誤訊息
+                    showMessage(data.message, 'danger');
+                }
+            });
+        });
+    });
+});
+</script>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>資料庫搜尋結果</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* 從原 style.css 複製的內容 */
+        .main-content {
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5; /* 淺灰色 */
+            /* overflow-x: hidden; 根據需要保留或移除 */
+        }
+        /* 表格相關樣式 */
+        .table-container {
+            overflow-x: auto;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            table-layout: fixed; /* 固定表格布局 */
+        }
+
+        /* 各欄位寬度設定 */
+        table th, table td {
+            padding: 8px;
+            vertical-align: middle;
+            word-wrap: break-word; /* 允許長文字換行 */
+            white-space: normal; /* 取消 nowrap */
+        }
+
+        /* 序號欄位 */
+        table th:nth-child(1), 
+        table td:nth-child(1) {
+            width: 8%;
+        }
+
+        /* 標題欄位 */
+        table th:nth-child(2), 
+        table td:nth-child(2) {
+            width: 18%;
+        }
+
+        /* 地址欄位 */
+        table th:nth-child(3), 
+        table td:nth-child(3) {
+            width: 15%;
+        }
+
+        /* 樓層欄位 */
+        table th:nth-child(4), 
+        table td:nth-child(4) {
+            width: 8%;
+        }
+
+        /* 格局欄位 */
+        table th:nth-child(5), 
+        table td:nth-child(5) {
+            width: 8%;
+        }
+
+        /* 租金欄位 */
+        table th:nth-child(6), 
+        table td:nth-child(6) {
+            width: 8%;
+        }
+
+        /* 車位欄位 */
+        table th:nth-child(7), 
+        table td:nth-child(7) {
+            width: 7%;
+        }
+
+        /* 坪數欄位 */
+        table th:nth-child(8), 
+        table td:nth-child(8) {
+            width: 7%;
+        }
+
+        /* 聯絡人欄位 */
+        table th:nth-child(9), 
+        table td:nth-child(9) {
+            width: 16%;
+        }
+
+        /* 操作欄位 */
+        table th:nth-child(11), 
+        table td:nth-child(11) {
+            width: 5%;
+        }
+
+        /* 標題和連結樣式 */
+        table td a {
+            display: block;
+            text-decoration: none;
+            color: #0d6efd;
+        }
+
+        table td a:hover {
+            text-decoration: underline;
+        }
+
+        /* 響應式調整 */
+        @media screen and (max-width: 768px) {
+            .table-container {
+                font-size: 14px;
+            }
+
+            table th, table td {
+                padding: 4px;
+            }
+        }
+        /* 從原 hamburger.css 複製的內容 */
+        .hamburger-menu {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 30px;
+            height: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0;
+            z-index: 1000;
+        }
+        .hamburger-menu .bar {
+            width: 100%;
+            height: 3px;
+            background-color: #333;
+            border-radius: 2px;
+            transition: all 0.3s ease-in-out;
+        }
+        .hamburger-menu.is-active .top-bar {
+            transform: translateY(10.5px) rotate(45deg);
+        }
+        .hamburger-menu.is-active .middle-bar {
+            opacity: 0;
+        }
+        .hamburger-menu.is-active .bottom-bar {
+            transform: translateY(-10.5px) rotate(-45deg);
+        }
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 999;
+            top: 0;
+            left: 0;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 60px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.open {
+            width: 300px;
+        }
+        .sidebar a, .sidebar .btn { /* Sidebar 內的連結和按鈕樣式 */
+            padding: 15px 25px 15px 35px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #818181;
+            display: block;
+            transition: 0.3s;
+        }
+        .sidebar a:hover, .sidebar .btn:hover {
+            color: #f1f1f1;
+            background-color: #333;
+        }
+        .sidebar .btn {
+            width: 200px;
+            margin: 10px 25px 5px 35px;
+            text-align: center;
+            padding: 10px 15px;
+            font-size: 18px;
+            white-space: nowrap;
+        }
+        /* 解開後讓表格移動 */
+        body.sidebar-open .main-content {
+            margin-left: 0px;
+            transition: margin-left 0.3s ease-in-out;
+        }
+        @media screen and (max-height: 450px) {
+            .sidebar {padding-top: 15px;}
+            .sidebar a {font-size: 18px;}
+        }
+        .navbar { /* 讓 navbar 也居中佔100%寬度 */
+            width: 100%;
+            margin: 0 auto;
+        }
+        /* 確保地圖有高度 */
+        #map {
+            height: 500px; /* 或你希望的地圖高度 */
+            width: 100%;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+        /* 表格有經緯度的行 */
+        .row-has-location {
+            /* 例如：非常淺的綠色背景 */
+            background-color: #e6ffe6; /* 淡綠色 */
+        }
+        /* 表格沒有經緯度的行 */
+        .row-no-location {
+            /* 例如：非常淺的黃色背景 */
+            background-color: #fffacd; /* 檸檬黃色 */
+            /* 也可以加上邊框或陰影來強調 */
+            /* border-left: 5px solid #ffc107; */
+        }
+
+        /* 強制覆蓋 Bootstrap 預設 hover 色 */
+        .table-hover tbody tr.row-has-location:hover > td,
+        .table-hover tbody tr.row-has-location:hover {
+            background-color: #d1ffd1 !important;
+        }
+        .table-hover tbody tr.row-no-location:hover > td,
+        .table-hover tbody tr.row-no-location:hover {
+            background-color: #ffe88a !important;
+        }
+
+        /* 如果你希望文字顏色不變，可以在這裡重設為預設顏色 */
+        .row-has-location td, .row-no-location td {
+            color: inherit; /* 讓單元格內的文字顏色繼承自父元素 */
+        }
+        /* 為模態框加載狀態準備的樣式 */
+        #geocodeLoadingIndicator {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body class="container-fluid py-5">
+
+    <!-- 加入訊息顯示區域 -->
+    <div id="messages-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if data %}
+        {# 僅在 has_ungeocoded_data 為 True 時顯示提示 #}
+        {% if has_ungeocoded_data %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>提示：</strong> 部分新資料的距離篩選功能將在管理員處理經緯度後開放。
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {# 主導覽列 #}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            {% if user.is_authenticated %}
+            <div class="me-auto">
+                <a href="{% url 'rent_list' %}" class="btn btn-primary me-2">切換到即時搜尋</a>
+            </div>
+            {% else %}
+            {% endif %}
+            <div>
+                {% if user.is_authenticated %}
+                    <span class="me-2">歡迎，{{ user.username }}</span>
+                    <a href="{% url 'logout' %}" class="btn btn-danger">登出</a>
+                {% else %}
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {# 漢堡選單按鈕 #}
+    <button class="hamburger-menu" id="hamburgerBtn">
+        <span class="bar top-bar"></span>
+        <span class="bar middle-bar"></span>
+        <span class="bar bottom-bar"></span>
+    </button>
+
+    {# 側邊欄 #}
+    <div class="sidebar" id="sidebar">
+        {% if user.is_authenticated %}
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                    id="accountDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-fill"></i> 帳號管理
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="accountDropdown" style="text-align: center;">
+                <li><a class="dropdown-item text-info" href="#" data-bs-toggle="modal" data-bs-target="#updateAddressModal">
+                    <i class="bi bi-geo-alt-fill"></i> 修改地址
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    <i class="bi bi-key"></i> 修改密碼
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-warning" href="#" data-bs-toggle="modal" data-bs-target="#deactivateAccountModal">
+                    <i class="bi bi-pause-circle"></i> 停用帳號
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                    <i class="bi bi-trash"></i> 刪除帳號
+                </a></li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#favoritesModal">
+            <i class="bi bi-heart-fill"></i> 我的收藏
+            <span class="badge bg-secondary">{{ user.favorites.count }}</span>
+        </button>
+        <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{% url 'data_analysis' %}'">
+            <i class="bi bi-graph-up"></i> 租屋統計
+        </button>
+        
+        {% if user.is_staff %}
+        <div class="dropdown">
+            <button class="btn btn-outline-warning dropdown-toggle" type="button"
+                    id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-gear-fill"></i> 管理功能
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="adminDropdown" style="text-align: center;">
+                <li>
+                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#getAllModal">
+                        <i class="bi bi-cloud-download-fill"></i> 取得所有縣市資料
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-warning" href="#" data-bs-toggle="modal" data-bs-target="#adminGeocodeModal">
+                        <i class="bi bi-geo-alt-fill"></i> 執行地理編碼
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-success" href="{% url 'admin:index' %}" target="_blank">
+                        <i class="bi bi-grid-fill"></i> 後台管理
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+
+        {% else %}
+            <div class="alert alert-warning m-4">
+                請<a href="{% url 'login' %}" class="alert-link">登入</a>以使用更多功能
+            </div>
+        {% endif %}
+    </div>
+
+    {# 主要內容區域 #}
+    <div class="main-content" id="mainContent">
+        {# database_results.html 獨有的搜尋表單 #}
+        <form method="GET" action="{% url 'search_database' %}" class="mb-4">
+            <div class="row g-3 mt-2 justify-content-center">
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="serial"
+                           placeholder="物件編號" value="{{ search_criteria.serial }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="title"
+                            placeholder="標題關鍵字" value="{{ search_criteria.title }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="address"
+                            placeholder="地址關鍵字" value="{{ search_criteria.address }}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="rooms">
+                        <option value="">房型</option>
+                        <option value="1" {% if search_criteria.rooms == '1' %}selected{% endif %}>1房</option>
+                        <option value="2" {% if search_criteria.rooms == '2' %}selected{% endif %}>2房</option>
+                        <option value="3" {% if search_criteria.rooms == '3' %}selected{% endif %}>3房</option>
+                        <option value="4+" {% if search_criteria.rooms == '4+' %}selected{% endif %}>4房以上</option>
+                    </select>
+                </div>
+                {% if user.is_authenticated %}
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-info w-100">搜尋</button>
+                </div>
+                <div class="col-md-1">
+                    <a href="{% url 'search_nearby_rentals' %}" class="btn btn-success w-100">從我的地址出發</a>
+                </div>
+                {% else %}
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-info w-100">搜尋</button>
+                </div>
+                {% endif %}
+                
+            </div>
+            <div class="row g-3 mt-2  justify-content-center">
+                <div class="col-md-4">
+                    <label class="form-label">租金範圍</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="price_min"
+                                placeholder="最低" value="{{ search_criteria.price_min }}">
+                        <span class="input-group-text">～</span>
+                        <input type="number" class="form-control" name="price_max"
+                                placeholder="最高" value="{{ search_criteria.price_max }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">坪數範圍</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="area_min"
+                                placeholder="最小" value="{{ search_criteria.area_min }}">
+                        <span class="input-group-text">～</span>
+                        <input type="number" class="form-control" name="area_max"
+                                placeholder="最大" value="{{ search_criteria.area_max }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">代理人</label>
+                    <input type="text" class="form-control" name="agent"
+                            placeholder="房東、仲介(收費)" value="{{ search_criteria.agent }}">
+                </div>
+            </div>
+        </form>
+
+        {# database_results.html 獨有的搜尋條件顯示 #}
+        {% if search_criteria %}
+        <div class="mb-3">
+            <strong>搜尋條件：</strong>
+            {% if search_criteria.serial %}<span class="badge bg-secondary">編號: {{ search_criteria.serial }}</span>{% endif %}
+            {% if search_criteria.title %}<span class="badge bg-secondary">標題: {{ search_criteria.title }}</span>{% endif %}
+            {% if search_criteria.address %}<span class="badge bg-secondary">地址: {{ search_criteria.address }}</span>{% endif %}
+            {% if search_criteria.rooms %}<span class="badge bg-secondary">房型: {{ search_criteria.rooms }}房</span>{% endif %}
+            {% if search_criteria.price_min or search_criteria.price_max %}
+                <span class="badge bg-secondary">租金: {{ search_criteria.price_min|default:'0' }} ~ {{ search_criteria.price_max|default:'無上限' }}</span>
+            {% endif %}
+            {% if search_criteria.area_min or search_criteria.area_max %}
+                <span class="badge bg-secondary">坪數: {{ search_criteria.area_min|default:'0' }} ~ {{ search_criteria.area_max|default:'無上限' }}</span>
+            {% endif %}
+            {% if search_criteria.agent %}<span class="badge bg-secondary">代理人: {{ search_criteria.agent }}</span>{% endif %}
+            {% if total_count is not None %}
+                <span class="badge bg-info ms-2">共 {{ total_count }} 筆結果</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        <div class="table-container">
+            {% if data %}
+            <table class="table table-hover table-bordered align-middle">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="?{{ search_params }}&sort=serial&order={% if request.GET.sort == 'serial' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                編號
+                                {% if request.GET.sort == 'serial' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=title&order={% if request.GET.sort == 'title' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                標題
+                                {% if request.GET.sort == 'title' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=addr&order={% if request.GET.sort == 'addr' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                地址
+                                {% if request.GET.sort == 'addr' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=level&order={% if request.GET.sort == 'level' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                樓層
+                                {% if request.GET.sort == 'level' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=pattern&order={% if request.GET.sort == 'pattern' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                格局
+                                {% if request.GET.sort == 'pattern' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=rent&order={% if request.GET.sort == 'rent' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                租金
+                                {% if request.GET.sort == 'rent' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=parking&order={% if request.GET.sort == 'parking' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                車位
+                                {% if request.GET.sort == 'parking' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=area&order={% if request.GET.sort == 'area' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                坪數
+                                {% if request.GET.sort == 'area' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?{{ search_params }}&sort=agent&order={% if request.GET.sort == 'agent' and request.GET.order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                代理人
+                                {% if request.GET.sort == 'agent' %}
+                                    {% if request.GET.order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr class="{% if item.location %}row-has-location{% else %}row-no-location{% endif %}">
+                        <td>{{ item.serial }}</td>
+                        <td><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></td>
+                        <td>
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ item.addr|urlencode }}" 
+                               target="_blank" 
+                               class="text-dark" 
+                               title="在 Google Maps 中開啟">
+                                {{ item.addr }}
+                                {# 經緯度圖示仍可根據有無而不同 #}
+                                {% if item.location %}
+                                    <i class="bi bi-geo-alt-fill text-success ms-1"></i> {# 綠色圖示 #}
+                                {% else %}
+                                    <i class="bi bi-geo-alt-fill text-warning ms-1"></i> {# 黃色圖示 #}
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td>{{ item.level }}</td>
+                        <td>{{ item.pattern|default:"-" }}</td>
+                        <td>{{ item.rent|cut:"元/月"|cut:"," }}</td>
+                        <td>{{ item.parking|default:"-" }}</td>
+                        <td>{{ item.area|cut:"坪" }}</td>
+                        <td>{{ item.agent|default:"-" }}</td>
+                        <td>
+                            {% if user.is_authenticated %}
+                            <form method="post" action="{% url 'add_favorite' item.serial %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-warning"
+                                        {% if item in user.favorites.all %}disabled{% endif %}>
+                                    {% if item in user.favorites.all %}已收藏{% else %}加入收藏{% endif %}
+                                </button>
+                            </form>
+                            {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-sm btn-secondary">登入後收藏</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {# database_results.html 獨有的分頁 #}
+            {% if data.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if data.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{{ search_params }}&page={{ data.previous_page_number }}">上一頁</a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in data.paginator.page_range %}
+                    <li class="page-item {% if i == data.number %}active{% endif %}">
+                        <a class="page-link" href="?{{ search_params }}&page={{ i }}">{{ i }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if data.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{{ search_params }}&page={{ data.next_page_number }}">下一頁</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="alert alert-info">查無資料</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# 彈出視窗 #}
+    {% include "modals/change_password_modal.html" %}
+    {% include "modals/deactivate_account_modal.html" %}
+    {% include "modals/delete_account_modal.html" %}
+    {% include "modals/favorites_modal.html" %}
+    {% include "modals/update_address_modal.html" %}
+    {% include "modals/admin_geocode_modal.html" %}
+    {% include "modals/get_all_modal.html" %}
+
+    {# JavaScript 載入 #}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAfqVoO5g0Nwh4lhBNE-ppFDsMs4RX_0NM&libraries=geometry&callback=initMap" async defer></script>
+    <script>
+        // 從原 script.js 複製的內容 (漢堡選單邏輯)
+        // 解開後讓表格移動
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- 側邊欄相關的邏輯 ---
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const body = document.body;
+
+            if (hamburgerBtn && sidebar && mainContent) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('open');
+                    this.classList.toggle('is-active');
+                    body.classList.toggle('sidebar-open');
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+                        sidebar.classList.remove('open');
+                        hamburgerBtn.classList.remove('is-active');
+                        body.classList.remove('sidebar-open');
+                    }
+                });
+            }
+
+            // --- 管理員地理編碼相關 JavaScript ---
+            const confirmGeocodeBtn = document.getElementById('confirmGeocodeBtn');
+            const adminPasswordInput = document.getElementById('adminPassword');
+            const geocodeMessageDiv = document.getElementById('geocodeMessage');
+            const geocodeLoadingIndicator = document.getElementById('geocodeLoadingIndicator');
+            const geocodeProgressBarText = document.getElementById('geocodeProgressBarText');
+            const geocodeProgressBar = document.getElementById('geocodeProgressBar');
+            const adminGeocodeModal = new bootstrap.Modal(document.getElementById('adminGeocodeModal'));
+
+            // 重置 Modal 狀態
+            document.getElementById('adminGeocodeModal').addEventListener('hidden.bs.modal', function () {
+                adminPasswordInput.value = '';
+                geocodeMessageDiv.style.display = 'none';
+                geocodeMessageDiv.className = 'alert mt-3';
+                geocodeLoadingIndicator.style.display = 'none';
+                geocodeProgressBar.style.width = '0%';
+                geocodeProgressBar.setAttribute('aria-valuenow', '0');
+                confirmGeocodeBtn.disabled = false;
+            });
+
+            confirmGeocodeBtn.addEventListener('click', function() {
+                // ... 地理編碼的邏輯 ...
+                const password = adminPasswordInput.value;
+                if (!password) {
+                    geocodeMessageDiv.textContent = '請輸入密碼！';
+                    geocodeMessageDiv.className = 'alert mt-3 alert-danger';
+                    geocodeMessageDiv.style.display = 'block';
+                    return;
+                }
+            
+                // 顯示載入提示和進度條，禁用按鈕
+                confirmGeocodeBtn.disabled = true;
+                geocodeLoadingIndicator.style.display = 'block';
+                geocodeMessageDiv.style.display = 'none'; // 隱藏之前的訊息
+
+                // 初始進度條狀態
+                geocodeProgressBar.style.width = '100%'; // 讓它直接顯示為滿條紋動畫，表示正在處理
+                geocodeProgressBar.setAttribute('aria-valuenow', '100');
+                geocodeProgressBarText.textContent = '正在進行地理編碼，請稍候...'; // 確保文本正確顯示
+            
+                // 獲取 CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+                fetch('{% url "geocode_missing_listings" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    geocodeLoadingIndicator.style.display = 'none'; // 隱藏載入提示
+                    confirmGeocodeBtn.disabled = false; // 啟用按鈕
+                
+                    if (data.status === 'success') {
+                        // 這裡可以顯示更詳細的成功訊息，包含處理了多少筆資料
+                        geocodeMessageDiv.textContent = `地理編碼完成。成功處理 ${data.geocoded_count} 筆，失敗 ${data.failed_count} 筆。`;
+                        geocodeMessageDiv.className = 'alert mt-3 alert-success';
+                        geocodeMessageDiv.style.display = 'block';
+                        // 成功後建議刷新頁面，讓用戶看到更新後的數據
+                        setTimeout(() => { location.reload(); }, 2000); // 2秒後自動刷新
+                    } else {
+                        geocodeMessageDiv.textContent = data.message;
+                        geocodeMessageDiv.className = 'alert mt-3 alert-danger';
+                        geocodeMessageDiv.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    geocodeLoadingIndicator.style.display = 'none';
+                    confirmGeocodeBtn.disabled = false;
+                    geocodeMessageDiv.textContent = '請求失敗，請檢查網絡或稍後再試。';
+                    geocodeMessageDiv.className = 'alert mt-3 alert-danger';
+                    geocodeMessageDiv.style.display = 'block';
+                });
+            });
+
+            // --- 管理員「取得所有資料」相關 JavaScript ---
+            const confirmGetAllBtn = document.getElementById('confirmGetAllBtn');
+            const getAllPasswordInput = document.getElementById('getAllPassword');
+            const getAllMessageDiv = document.getElementById('getAllMessage');
+            const getAllLoadingIndicator = document.getElementById('getAllLoadingIndicator');
+            const getAllProgressBarText = document.getElementById('getAllProgressBarText');
+            const getAllProgressBar = document.getElementById('getAllProgressBar');
+            const getAllModal = new bootstrap.Modal(document.getElementById('getAllModal'));
+                    
+            // 重置「取得所有資料」模態框狀態
+            document.getElementById('getAllModal').addEventListener('hidden.bs.modal', function () {
+                getAllPasswordInput.value = ''; // 清空密碼
+                getAllMessageDiv.style.display = 'none'; // 隱藏訊息
+                getAllMessageDiv.className = 'alert mt-3'; // 重置訊息樣式
+                getAllLoadingIndicator.style.display = 'none'; // 隱藏載入提示
+                getAllProgressBar.style.width = '0%'; // 重置進度條寬度
+                getAllProgressBar.setAttribute('aria-valuenow', '0'); // 重置進度條值
+                getAllProgressBar.classList.remove('progress-bar-striped', 'progress-bar-animated'); // 移除動畫
+                getAllProgressBarText.textContent = '正在爬取資料中，請稍候...'; // 重置文本
+                confirmGetAllBtn.disabled = false; // 啟用按鈕
+                confirmGetAllBtn.classList.remove('btn-secondary'); // 重置按鈕樣式
+                confirmGetAllBtn.classList.add('btn-primary'); // 重置按鈕樣式
+                confirmGetAllBtn.textContent = '確認並執行'; // 重置按鈕文本
+            });
+            
+            // 這應該是 confirmGetAllBtn 唯一的 click 事件監聽器
+            confirmGetAllBtn.addEventListener('click', function() {
+                const password = getAllPasswordInput.value;
+                console.log('Attempting to submit password:', password); // 新增這行來確認密碼值
+            
+                if (!password) {
+                    getAllMessageDiv.textContent = '請輸入密碼！';
+                    getAllMessageDiv.className = 'alert mt-3 alert-danger';
+                    getAllMessageDiv.style.display = 'block';
+                    return; // 如果沒有密碼，直接返回
+                }
+            
+                // 禁用按鈕並顯示載入指示器
+                confirmGetAllBtn.disabled = true;
+                confirmGetAllBtn.textContent = '處理中...';
+                confirmGetAllBtn.classList.remove('btn-primary');
+                confirmGetAllBtn.classList.add('btn-secondary');
+                getAllLoadingIndicator.style.display = 'block';
+                getAllMessageDiv.style.display = 'none';
+            
+                // 將進度條設置為不確定性模式（條紋動畫），表示正在處理
+                getAllProgressBar.style.width = '100%';
+                getAllProgressBar.setAttribute('aria-valuenow', '0');
+                getAllProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+                getAllProgressBarText.textContent = '正在爬取資料中，請稍候...';
+            
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+                // 發送 POST 請求到後端
+                fetch('{% url "get_all_rent_list" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `password=${encodeURIComponent(password)}` // 確保密碼被正確編碼並發送
+                })
+                .then(response => {
+                    // 檢查響應是否為 JSON
+                    if (response.headers.get('content-type')?.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // 如果不是 JSON，可能是其他錯誤，例如伺服器內部錯誤頁面
+                        console.error('Server response was not JSON:', response.status, response.statusText);
+                        return response.text().then(text => {
+                            console.error('Server response text:', text);
+                            throw new Error('伺服器返回了非預期的響應格式。');
+                        });
+                    }
+                })
+                .then(data => {
+                    getAllLoadingIndicator.style.display = 'none'; // 隱藏載入提示
+                    confirmGetAllBtn.disabled = false; // 啟用按鈕
+                    confirmGetAllBtn.textContent = '確認並執行';
+                    confirmGetAllBtn.classList.remove('btn-secondary');
+                    confirmGetAllBtn.classList.add('btn-primary');
+                    getAllProgressBar.classList.remove('progress-bar-striped', 'progress-bar-animated'); // 移除動畫
+                
+                    if (data.status === 'success') {
+                        getAllMessageDiv.textContent = data.message;
+                        getAllMessageDiv.className = 'alert mt-3 alert-success';
+                        getAllMessageDiv.style.display = 'block';
+                        getAllProgressBarText.textContent = '爬取完成！'; // 最終顯示爬取完成
+                        setTimeout(() => { location.reload(); }, 2000); // 2秒後自動刷新
+                    } else {
+                        getAllMessageDiv.textContent = data.message;
+                        getAllMessageDiv.className = 'alert mt-3 alert-danger';
+                        getAllMessageDiv.style.display = 'block';
+                        getAllProgressBarText.textContent = '爬取失敗。'; // 最終顯示爬取失敗
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    getAllLoadingIndicator.style.display = 'none';
+                    confirmGetAllBtn.disabled = false;
+                    confirmGetAllBtn.textContent = '確認並執行';
+                    confirmGetAllBtn.classList.remove('btn-secondary');
+                    confirmGetAllBtn.classList.add('btn-primary');
+                    getAllProgressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                    getAllMessageDiv.textContent = `請求失敗：${error.message}，請檢查網絡或稍後再試。`; // 顯示更詳細的錯誤訊息
+                    getAllMessageDiv.className = 'alert mt-3 alert-danger';
+                    getAllMessageDiv.style.display = 'block';
+                    getAllProgressBarText.textContent = '爬取失敗。';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

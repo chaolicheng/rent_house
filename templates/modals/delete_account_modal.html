@@ -1,0 +1,88 @@
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">刪除帳號</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 顯示用戶資訊 -->
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">帳號資訊：</h6>
+                    <p class="mb-1">用戶 ID：{{ user.id }}</p>
+                    <p class="mb-1">用戶名稱：{{ user.username }}</p>
+                    <p class="mb-1">註冊日期：{{ user.date_joined|date:"Y-m-d H:i" }}</p>
+                    <p class="mb-0">收藏數量：{{ user.favorites.count }}</p>
+                </div>
+                
+                <!-- 警告訊息 -->
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    警告：帳號刪除後將無法復原，所有收藏的物件都會被移除。
+                </div>
+
+                <!-- 密碼確認表單 -->
+                <form id="deleteAccountForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">請輸入密碼以確認刪除</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="deleteAccountForm" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> 確認刪除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteAccountForm');
+    const modal = document.getElementById('deleteAccountModal');
+    const bsModal = new bootstrap.Modal(modal);
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 彈出確認對話框
+        if (!confirm('您確定要刪除帳號嗎？此操作無法復原！')) {
+            return;
+        }
+        
+        const formData = new FormData(form);
+        
+        fetch('{% url "delete_account" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                // 延遲1秒後重導向到登入頁面
+                setTimeout(() => {
+                    window.location.href = '{% url "login" %}';
+                }, 1000);
+            } else {
+                showMessage(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showMessage('發生錯誤：' + error, 'danger');
+        })
+        .finally(() => {
+            // 不管成功或失敗都執行清空和關閉
+            form.reset();
+            bsModal.hide();
+        });
+    });
+});
+</script>

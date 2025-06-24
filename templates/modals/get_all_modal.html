@@ -1,0 +1,37 @@
+<div class="modal fade" id="getAllModal" tabindex="-1" aria-labelledby="getAllModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="getAllModalLabel">爬取所有縣市資料</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>此操作將開始爬取台灣所有縣市的租屋資料，並自動存入資料庫。</p>
+                <p>這將是一個**耗時較長**的操作。</p>
+                <p>請確保您的網路連線正常，並且有足夠的時間等待爬取完成。</p>
+                <p class="text-danger">請輸入您的密碼以確認操作：</p>
+                <form id="getAllForm">
+                    {% csrf_token %} {# Django CSRF token #}
+                    <div class="mb-3">
+                        <label for="getAllPassword" class="form-label">管理員密碼</label>
+                        <input type="password" class="form-control" id="getAllPassword" required>
+                    </div>
+                    <div id="getAllMessage" class="alert mt-3" style="display: none;"></div>
+                    <div id="getAllLoadingIndicator" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2" id="getAllProgressBarText">正在爬取資料中，請稍候... (已處理 0/{{ total_cities|default:22 }} 縣市)</p>
+                        <div class="progress mt-3">
+                            <div id="getAllProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmGetAllBtn">確認並執行</button>
+            </div>
+        </div>
+    </div>
+</div>
