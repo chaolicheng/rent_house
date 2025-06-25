@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'listings.apps.ListingsConfig',
     'django.contrib.gis',  # 如果使用地理資訊系統功能
+    'auditlog',
 ]
 
 MIDDLEWARE = [
